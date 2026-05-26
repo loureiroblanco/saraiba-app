@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Saraiba · Generador de clases</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+{% include "nav.html" %}
+
+<div class="pagina">
+
+  <h1 class="seccion-titulo" style="margin-bottom:0.2rem">✨ Generar sesión</h1>
+  <p class="seccion-sub">Configura los parámetros y la IA diseña la clase completa para ti.</p>
+
+  <div class="tarjeta">
+    <div class="generador-grid">
+
+      <!-- Disciplina -->
+      <div>
+        <label class="campo-label">Disciplina</label>
+        <div class="btn-grupo" id="g-disciplina">
+          <button class="btn-opcion activo" data-val="yoga">🧘 Yoga</button>
+          <button class="btn-opcion" data-val="pilates">🤸 Pilates</button>
+          <button class="btn-opcion" data-val="funcional">💪 Funcional</button>
+          <button class="btn-opcion" data-val="trx">🔗 TRX</button>
+          <button class="btn-opcion" data-val="mixto">🌀 Mixto</button>
+        </div>
+      </div>
+
+      <!-- Nivel -->
+      <div>
+        <label class="campo-label">Nivel</label>
+        <div class="btn-grupo" id="g-nivel">
+          <button class="btn-opcion activo" data-val="principiante">🌱 Principiante</button>
+          <button class="btn-opcion" data-val="medio">🌿 Medio</button>
+          <button class="btn-opcion" data-val="avanzado">🌳 Avanzado</button>
+          <button class="btn-opcion" data-val="mixto">🎯 Grupo mixto</button>
+        </div>
+      </div>
+
+      <!-- Duración -->
+      <div>
+        <label class="campo-label">Duración</label>
+        <div class="btn-grupo" id="g-duracion">
+          <button class="btn-opcion activo" data-val="60">60 min</button>
+          <button class="btn-opcion" data-val="70">70 min</button>
+          <button class="btn-opcion" data-val="90">90 min</button>
+        </div>
+      </div>
+
+      <!-- Foco corporal -->
+      <div>
+        <label class="campo-label">Foco corporal</label>
+        <div class="btn-grupo" id="g-foco">
+          <button class="btn-opcion activo" data-val="general">🔵 General</button>
+          <button class="btn-opcion" data-val="core">🎯 Core</button>
+          <button class="btn-opcion" data-val="caderas">🦋 Caderas</button>
+          <button class="btn-opcion" data-val="espalda">🦴 Espalda</button>
+          <button class="btn-opcion" data-val="hombros">🫶 Hombros</button>
+          <button class="btn-opcion" data-val="piernas">🦵 Piernas</button>
+          <button class="btn-opcion" data-val="equilibrio">⚖️ Equilibrio</button>
+          <button class="btn-opcion" data-val="respiracion">🌬️ Respiración</button>
+        </div>
+      </div>
+
+      <!-- Energía -->
+      <div>
+        <label class="campo-label">Energía / intensidad</label>
+        <div class="btn-grupo" id="g-energia">
+          <button class="btn-opcion activo" data-val="activa">⚡ Activa</button>
+          <button class="btn-opcion" data-val="suave">🌙 Suave</button>
+          <button class="btn-opcion" data-val="terapeutica">💚 Terapéutica</button>
+        </div>
+      </div>
+
+      <!-- Condiciones especiales -->
+      <div>
+        <label class="campo-label">Condiciones del grupo (opcional)</label>
+        <div class="check-grupo" id="g-especial">
+          <label class="check-opcion">
+            <input type="checkbox" value="embarazo" /> 🤰 Embarazo
+          </label>
+          <label class="check-opcion">
+            <input type="checkbox" value="mayor" /> 👴 Persona mayor
+          </label>
+          <label class="check-opcion">
+            <input type="checkbox" value="lumbar" /> 🦴 Lumbar
+          </label>
+          <label class="check-opcion">
+            <input type="checkbox" value="rodillas" /> 🦵 Rodillas
+          </label>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Título y contexto libre -->
+    <div style="margin-top:1.25rem">
+      <label class="campo-label">Título de la clase <span style="font-weight:400;text-transform:none">(opcional)</span></label>
+      <input type="text" id="titulo-clase" class="campo-titulo" placeholder="Ej: Yoga restaurativo lunes tarde" style="margin-bottom:1rem" />
+
+      <label class="campo-label">Contexto adicional <span style="font-weight:400;text-transform:none">(opcional)</span></label>
+      <textarea id="contexto" class="campo-texto" rows="2"
+        placeholder="Ej: Grupo de 8 personas, espacio pequeño sin material extra, hace calor…"></textarea>
+    </div>
+
+    <div style="margin-top:1.25rem;display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap">
+      <button class="btn-primario" id="btn-generar">✨ Generar sesión</button>
+      <span id="estado-carga-txt" class="oculto" style="color:var(--verde);font-size:0.9rem">Generando clase, puede tardar 20-30 s…</span>
+    </div>
+  </div>
+
+  <!-- Estado carga -->
+  <div id="estado-carga" class="tarjeta estado-carga oculto">
+    <div class="spinner"></div>
+    <p>Diseñando tu sesión...<br><small style="color:var(--texto-suave)">Claude está construyendo la secuencia completa</small></p>
+  </div>
+
+  <!-- Error -->
+  <div id="estado-error" class="tarjeta oculto" style="border-left:4px solid var(--rojo);padding:1rem 1.25rem">
+    <p>⚠️ <span id="texto-error"></span></p>
+  </div>
+
+  <!-- Resultado -->
+  <div id="resultado" class="tarjeta oculto">
+    <div class="resultado-cabecera">
+      <div>
+        <div style="font-weight:700;font-size:1.05rem;color:var(--verde-oscuro)" id="res-titulo"></div>
+        <div id="res-badges" style="margin-top:0.4rem;display:flex;flex-wrap:wrap;gap:0.35rem"></div>
+      </div>
+      <div class="resultado-acciones no-imprimir">
+        <button class="btn-secundario" id="btn-guardar">💾 Guardar</button>
+        <button class="btn-secundario" onclick="window.print()">🖨 Imprimir</button>
+      </div>
+    </div>
+    <div class="sesion-contenido" id="sesion-texto"></div>
+  </div>
+
+</div>
+
+<script src="/static/generador.js"></script>
+</body>
+</html>

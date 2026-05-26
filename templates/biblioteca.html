@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Saraiba · Biblioteca</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+{% include "nav.html" %}
+
+<div class="pagina-ancha">
+
+  <h1 class="seccion-titulo" style="margin-bottom:0.2rem">📚 Biblioteca de clases</h1>
+  <p class="seccion-sub">Tus sesiones guardadas. Pulsa ⭐ para marcarlas como plantilla.</p>
+
+  <div class="filtros-bar">
+    <label>Filtrar:</label>
+    <div class="btn-grupo" id="filtro-disciplina">
+      <button class="btn-opcion activo" data-val="">Todas</button>
+      <button class="btn-opcion" data-val="yoga">🧘 Yoga</button>
+      <button class="btn-opcion" data-val="pilates">🤸 Pilates</button>
+      <button class="btn-opcion" data-val="funcional">💪 Funcional</button>
+      <button class="btn-opcion" data-val="trx">🔗 TRX</button>
+      <button class="btn-opcion" data-val="mixto">🌀 Mixto</button>
+    </div>
+    <div class="btn-grupo" id="filtro-nivel" style="margin-left:0.5rem">
+      <button class="btn-opcion activo" data-val="">Todos niveles</button>
+      <button class="btn-opcion" data-val="principiante">🌱 Principiante</button>
+      <button class="btn-opcion" data-val="medio">🌿 Medio</button>
+      <button class="btn-opcion" data-val="avanzado">🌳 Avanzado</button>
+    </div>
+    <label style="margin-left:auto">
+      <input type="checkbox" id="solo-plantillas" /> Solo plantillas ⭐
+    </label>
+  </div>
+
+  <div id="lista-clases" class="biblioteca-grid">
+    <div class="vacio-msg">Cargando clases...</div>
+  </div>
+
+</div>
+
+<script src="/static/biblioteca.js"></script>
+</body>
+</html>

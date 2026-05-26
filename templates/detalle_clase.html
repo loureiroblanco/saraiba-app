@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ clase.titulo }} · Saraiba</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+{% include "nav.html" %}
+
+<div class="pagina">
+
+  <div class="detalle-cabecera no-imprimir">
+    <div>
+      <a href="/biblioteca" class="btn-secundario btn-sm">← Biblioteca</a>
+      <h1 class="detalle-titulo" style="margin-top:0.75rem">{{ clase.titulo }}</h1>
+      <div class="detalle-meta">
+        <span class="badge badge-{{ clase.disciplina }}">
+          {% if clase.disciplina == 'yoga' %}🧘{% elif clase.disciplina == 'pilates' %}🤸{% elif clase.disciplina == 'funcional' %}💪{% elif clase.disciplina == 'trx' %}🔗{% else %}🌀{% endif %}
+          {{ clase.disciplina | title }}
+        </span>
+        <span class="badge badge-nivel">
+          {% if clase.nivel == 'principiante' %}🌱{% elif clase.nivel == 'medio' %}🌿{% elif clase.nivel == 'avanzado' %}🌳{% else %}🎯{% endif %}
+          {{ clase.nivel | title }}
+        </span>
+        <span class="badge">⏱ {{ clase.duracion }} min</span>
+        {% if clase.foco %}<span class="badge">{{ clase.foco | title }}</span>{% endif %}
+        {% if clase.energia %}<span class="badge">{{ clase.energia | title }}</span>{% endif %}
+        {% if clase.plantilla %}<span class="badge" style="background:#fff3e0;color:var(--naranja)">⭐ Plantilla</span>{% endif %}
+      </div>
+      <div style="font-size:0.8rem;color:var(--texto-suave);margin-top:0.4rem">Creada el {{ clase.creada.strftime('%d/%m/%Y a las %H:%M') }}</div>
+    </div>
+    <div class="detalle-acciones">
+      <button class="btn-secundario" onclick="window.print()">🖨 Imprimir / PDF</button>
+      <button class="btn-secundario" id="btn-plantilla">
+        {{ '⭐ Quitar de plantillas' if clase.plantilla else '☆ Marcar como plantilla' }}
+      </button>
+      <button class="btn-peligro btn-sm" id="btn-borrar">🗑 Borrar</button>
+    </div>
+  </div>
+
+  <!-- Cabecera imprimible -->
+  <div style="display:none" class="solo-imprimir">
+    <h1 style="font-size:1.4rem;color:#2d5a3d;margin-bottom:0.5rem">{{ clase.titulo }}</h1>
+    <p style="font-size:0.85rem;color:#666;margin-bottom:1.5rem">
+      {{ clase.disciplina | title }} · {{ clase.nivel | title }} · {{ clase.duracion }} min
+      {% if clase.foco %} · {{ clase.foco | title }}{% endif %}
+    </p>
+  </div>
+
+  <div class="tarjeta">
+    <div class="sesion-contenido" id="sesion-texto"></div>
+  </div>
+
+</div>
+
+<style>
+  @media print {
+    .no-imprimir { display: none !important; }
+    .solo-imprimir { display: block !important; }
+  }
+  .solo-imprimir { display: none; }
+</style>
+
+<script>
+  const CLASE_ID   = {{ clase.id }};
+  const CLASE_TITULO = {{ clase.titulo | tojson }};
+  const CONTENIDO  = {{ clase.contenido | tojson }};
+</script>
+<script src="/static/detalle_clase.js"></script>
+</body>
+</html>
