@@ -89,39 +89,17 @@ ESPECIALES = {
     "ninguno":     "",
 }
 
-SYSTEM_PROMPT = """Eres un profesor experto en yoga, pilates, entrenamiento funcional y TRX con más de 15 años de experiencia.
-Diseñas clases con progresión corporal lógica, seguras y adaptadas a cada grupo.
+SYSTEM_PROMPT = """Eres un profesor experto en yoga, pilates, funcional y TRX. Diseñas clases con progresión corporal lógica.
 
-PROGRESIÓN OBLIGATORIA para yoga (respeta este orden de posiciones):
-  supino → prono/cuadrupedia → sentado → arrodillado → de pie → equilibrio → inversiones suaves → pranayama → relajación
-No pases directamente de posturas de suelo a de pie sin transición en cuadrupedia o arrodillado.
+PROGRESIÓN: supino → prono/cuadrupedia → sentado → arrodillado → de pie → equilibrio → pranayama → relajación.
 
-BLOQUE DE RESPIRACIÓN: SIEMPRE al menos 10 minutos, con MÍNIMO 2 pranayamas nombrados (ej: Nadi Shodhana, Kapalabhati, Ujjayi, Bhramari, Viloma). Describe cada uno con instrucciones claras.
+BLOQUE RESPIRACIÓN: mínimo 10 minutos, con al menos 2 pranayamas nombrados (Nadi Shodhana, Kapalabhati, Ujjayi, Bhramari, Viloma).
 
-RESPONDE ÚNICAMENTE CON JSON VÁLIDO — sin texto antes ni después, sin bloques ```json.
-El JSON debe seguir exactamente esta estructura:
+RESPONDE SOLO CON JSON VÁLIDO, sin texto adicional, sin bloques ```json:
+{"bloques":[{"nombre":"...","duracion_min":5,"descripcion":"...","items":[{"postura":"...","sanskrit":"...","duracion":"...","cue":"...","variacion":"..."}]}],"notas_profesor":["..."]}
 
-{
-  "bloques": [
-    {
-      "nombre": "Llegada y centrado",
-      "duracion_min": 5,
-      "descripcion": "Texto de contexto para el profesor sobre este bloque",
-      "items": [
-        {
-          "postura": "Nombre de la postura o ejercicio",
-          "sanskrit": "Nombre en sánscrito si aplica (o vacío)",
-          "duracion": "1 min cada lado",
-          "cue": "Instrucción principal de alineación o ejecución",
-          "variacion": "Variación para principiante o condición especial (o vacío)"
-        }
-      ]
-    }
-  ],
-  "notas_profesor": ["Nota 1", "Nota 2", "Nota 3"]
-}
-
-Bloques obligatorios en orden: Llegada/centrado, Calentamiento, Bloque principal, Vuelta a la calma, Respiración y pranayama (≥10min), Savasana/Relajación final."""
+En cada item: cue máximo 15 palabras, variacion máximo 10 palabras. Descripcion de bloque máximo 20 palabras.
+Bloques obligatorios: Llegada/centrado, Calentamiento, Bloque principal, Vuelta a la calma, Respiración/pranayama (≥10min), Savasana."""
 
 
 def construir_prompt(datos):
@@ -189,18 +167,27 @@ def generar():
     try:
         resp = client.messages.create(
             model="claude-sonnet-4-6",
-            max_tokens=6000,
+            max_tokens=8000,
             system=SYSTEM_PROMPT,
             messages=[{"role": "user", "content": prompt}],
         )
         texto = resp.content[0].text.strip()
 
         # Extraer JSON aunque venga envuelto en ```json ... ```
-        if texto.startswith("```"):
-            texto = texto.split("```")[1]
-            if texto.startswith("json"):
-                texto = texto[4:]
-            texto = texto.strip()
+        if "```" in texto:
+            partes = texto.split("```")
+            for parte in partes:
+                if parte.startswith("json"):
+                    texto = parte[4:].strip()
+                    break
+                elif parte.strip().startswith("{"):
+                    texto = parte.strip()
+                    break
+
+        # Buscar el inicio del JSON si hay texto previo
+        inicio = texto.find("{")
+        if inicio > 0:
+            texto = texto[inicio:]
 
         sesion = json.loads(texto)
 
