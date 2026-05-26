@@ -310,6 +310,136 @@ input.campo-titulo:focus {
   font-size: 0.88rem;
 }
 
+/* ===== Bloques de sesión estructurada ===== */
+.sesion-bloque {
+  margin-bottom: 1.75rem;
+}
+.sesion-bloque-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--arena-oscura);
+}
+.sesion-bloque-titulo {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--verde-oscuro);
+  flex: 1;
+}
+.sesion-bloque-tiempo {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--blanco);
+  background: var(--verde);
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.sesion-bloque-desc {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+  font-style: italic;
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+/* Respiración: bloque destacado */
+.sesion-bloque.bloque-respiracion .sesion-bloque-header {
+  border-bottom-color: var(--verde-claro);
+}
+.sesion-bloque.bloque-respiracion .sesion-bloque-titulo { color: var(--verde); }
+.sesion-bloque.bloque-respiracion .sesion-bloque-tiempo { background: var(--verde-claro); }
+
+/* Grid de posturas */
+.posturas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.85rem;
+}
+.postura-card {
+  background: var(--arena);
+  border: 1.5px solid var(--arena-oscura);
+  border-radius: 10px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  cursor: default;
+}
+.postura-card:hover {
+  border-color: var(--verde-claro);
+  box-shadow: 0 2px 10px rgba(74,124,89,0.12);
+}
+.postura-card.pranayama-card {
+  background: #f0f7f2;
+  border-color: var(--verde-claro);
+}
+.postura-svg {
+  width: 100%;
+  aspect-ratio: 3/2;
+  color: var(--verde-oscuro);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.postura-svg svg { width: 100%; height: 100%; }
+.postura-nombre {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--verde-oscuro);
+  line-height: 1.2;
+}
+.postura-sanskrit {
+  font-size: 0.72rem;
+  color: var(--texto-suave);
+  font-style: italic;
+}
+.postura-duracion {
+  font-size: 0.75rem;
+  color: var(--verde);
+  font-weight: 600;
+}
+.postura-cue {
+  font-size: 0.78rem;
+  color: var(--texto);
+  line-height: 1.4;
+  border-top: 1px solid var(--arena-oscura);
+  padding-top: 0.35rem;
+  margin-top: 0.2rem;
+}
+.postura-variacion {
+  font-size: 0.72rem;
+  color: var(--naranja);
+  font-style: italic;
+  line-height: 1.35;
+}
+
+/* Notas del profesor */
+.notas-profesor {
+  background: #f0f7f2;
+  border-left: 4px solid var(--verde);
+  border-radius: 0 8px 8px 0;
+  padding: 1rem 1.25rem;
+  margin-top: 1.5rem;
+}
+.notas-profesor-titulo {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--verde);
+  margin-bottom: 0.5rem;
+}
+.notas-profesor ul { padding-left: 1.2rem; }
+.notas-profesor li { font-size: 0.88rem; color: var(--texto); margin-bottom: 0.3rem; line-height: 1.5; }
+
+@media (max-width: 500px) {
+  .posturas-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
 /* ===== Badges ===== */
 .badge {
   display: inline-flex;

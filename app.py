@@ -90,16 +90,38 @@ ESPECIALES = {
 }
 
 SYSTEM_PROMPT = """Eres un profesor experto en yoga, pilates, entrenamiento funcional y TRX con más de 15 años de experiencia.
-Diseñas clases estructuradas, seguras, progresivas y adaptadas a cada grupo.
+Diseñas clases con progresión corporal lógica, seguras y adaptadas a cada grupo.
 
-Al generar una sesión:
-- Estructura SIEMPRE: Llegada/centrado → Calentamiento → Bloque principal → Vuelta a la calma → Cierre/Savasana
-- Cada bloque tiene un tiempo asignado proporcional a la duración total
-- Cada ejercicio/postura incluye: nombre, duración o repeticiones, cue principal de alineación, y variación si el nivel es mixto
-- La progresión es lógica: no saltes de suave a intenso sin transición
-- Usa lenguaje claro y directo, como si hablaras en clase
-- Formato markdown: usa ## para bloques, **negrita** para nombres de ejercicios, listas con guiones
-- Al final añade una sección ## Notas del profesor con 2-3 observaciones clave sobre la sesión"""
+PROGRESIÓN OBLIGATORIA para yoga (respeta este orden de posiciones):
+  supino → prono/cuadrupedia → sentado → arrodillado → de pie → equilibrio → inversiones suaves → pranayama → relajación
+No pases directamente de posturas de suelo a de pie sin transición en cuadrupedia o arrodillado.
+
+BLOQUE DE RESPIRACIÓN: SIEMPRE al menos 10 minutos, con MÍNIMO 2 pranayamas nombrados (ej: Nadi Shodhana, Kapalabhati, Ujjayi, Bhramari, Viloma). Describe cada uno con instrucciones claras.
+
+RESPONDE ÚNICAMENTE CON JSON VÁLIDO — sin texto antes ni después, sin bloques ```json.
+El JSON debe seguir exactamente esta estructura:
+
+{
+  "bloques": [
+    {
+      "nombre": "Llegada y centrado",
+      "duracion_min": 5,
+      "descripcion": "Texto de contexto para el profesor sobre este bloque",
+      "items": [
+        {
+          "postura": "Nombre de la postura o ejercicio",
+          "sanskrit": "Nombre en sánscrito si aplica (o vacío)",
+          "duracion": "1 min cada lado",
+          "cue": "Instrucción principal de alineación o ejecución",
+          "variacion": "Variación para principiante o condición especial (o vacío)"
+        }
+      ]
+    }
+  ],
+  "notas_profesor": ["Nota 1", "Nota 2", "Nota 3"]
+}
+
+Bloques obligatorios en orden: Llegada/centrado, Calentamiento, Bloque principal, Vuelta a la calma, Respiración y pranayama (≥10min), Savasana/Relajación final."""
 
 
 def construir_prompt(datos):
@@ -115,23 +137,22 @@ def construir_prompt(datos):
             especiales.append(ESPECIALES[e])
     contexto_libre = datos.get("contexto", "").strip()
 
-    prompt = f"""Genera una sesión completa de **{disciplina}** con las siguientes características:
-
-- **Duración total:** {duracion} minutos
-- **Nivel:** {nivel}
-- **Foco principal:** {foco}
-- **Energía / intensidad:** {energia}"""
+    prompt = f"""Genera una sesión de {disciplina}, {duracion} minutos, nivel {nivel}.
+Foco: {foco}. Energía: {energia}."""
 
     if especiales:
-        prompt += f"\n- **Condiciones especiales del grupo:** {'; '.join(especiales)}"
+        prompt += f"\nCondiciones especiales: {'; '.join(especiales)}."
 
     if contexto_libre:
-        prompt += f"\n- **Contexto adicional del profesor:** {contexto_libre}"
+        prompt += f"\nContexto adicional: {contexto_libre}."
 
-    prompt += """
+    prompt += f"""
 
-Genera la sesión completa ahora, con todos los bloques, ejercicios, tiempos y cues.
-Sé específico y práctico — esta sesión debe poderse usar directamente en clase."""
+Recuerda:
+- Progresión corporal lógica (supino → de pie → pranayama → savasana)
+- Bloque de respiración MÍNIMO 10 minutos con al menos 2 pranayamas
+- La suma de duracion_min de todos los bloques debe ser exactamente {duracion} minutos
+- Devuelve SOLO JSON válido"""
 
     return prompt
 
@@ -168,15 +189,27 @@ def generar():
     try:
         resp = client.messages.create(
             model="claude-sonnet-4-6",
-            max_tokens=4096,
+            max_tokens=6000,
             system=SYSTEM_PROMPT,
             messages=[{"role": "user", "content": prompt}],
         )
-        contenido = resp.content[0].text
+        texto = resp.content[0].text.strip()
+
+        # Extraer JSON aunque venga envuelto en ```json ... ```
+        if texto.startswith("```"):
+            texto = texto.split("```")[1]
+            if texto.startswith("json"):
+                texto = texto[4:]
+            texto = texto.strip()
+
+        sesion = json.loads(texto)
+
+    except json.JSONDecodeError as e:
+        return jsonify({"error": f"La IA no devolvió JSON válido: {str(e)}", "raw": texto[:500]}), 500
     except Exception as e:
         return jsonify({"error": f"Error al generar la sesión: {str(e)}"}), 500
 
-    return jsonify({"contenido": contenido, "prompt_usado": prompt})
+    return jsonify({"sesion": sesion})
 
 
 @app.route("/api/clases", methods=["GET"])
@@ -203,6 +236,10 @@ def guardar_clase():
     if not datos or not datos.get("contenido"):
         return jsonify({"error": "Contenido vacío"}), 400
 
+    contenido = datos.get("contenido")
+    if isinstance(contenido, dict):
+        contenido = json.dumps(contenido, ensure_ascii=False)
+
     clase = Clase(
         titulo     = datos.get("titulo") or f"Clase {datos.get('disciplina','').title()} {datos.get('duracion','')}min",
         disciplina = datos.get("disciplina", "yoga"),
@@ -210,8 +247,8 @@ def guardar_clase():
         duracion   = int(datos.get("duracion", 60)),
         foco       = datos.get("foco", "general"),
         energia    = datos.get("energia", "activa"),
-        especial   = ", ".join(datos.get("especial", [])),
-        contenido  = datos["contenido"],
+        especial   = ", ".join(datos.get("especial", [])) if isinstance(datos.get("especial"), list) else datos.get("especial", ""),
+        contenido  = contenido,
         plantilla  = bool(datos.get("plantilla", False)),
     )
     db.session.add(clase)

@@ -11,7 +11,6 @@ function initGrupo(id) {
 }
 ["g-disciplina", "g-nivel", "g-duracion", "g-foco", "g-energia"].forEach(initGrupo);
 
-// ===== Checkboxes especiales =====
 document.querySelectorAll(".check-opcion").forEach(label => {
   label.addEventListener("click", () => {
     const cb = label.querySelector("input");
@@ -29,33 +28,6 @@ function getEspeciales() {
   return Array.from(document.querySelectorAll("#g-especial input:checked")).map(cb => cb.value);
 }
 
-// ===== Estado de la última generación (para guardar) =====
-let ultimaDatos = null;
-let ultimoContenido = null;
-
-// ===== Renderizado Markdown =====
-function renderizarMarkdown(texto) {
-  return texto
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-    .replace(/^---+$/gm, "<hr>")
-    .replace(/^### (.+)$/gm, "<h3>$1</h3>")
-    .replace(/^## (.+)$/gm, "<h2>$1</h2>")
-    .replace(/^# (.+)$/gm, "<h2>$1</h2>")
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/`(.+?)`/g, "<code>$1</code>")
-    .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/((?:^\d+\. .+\n?)+)/gm, bloque => {
-      const items = bloque.trim().split("\n").map(l => `<li>${l.replace(/^\d+\. /, "")}</li>`).join("");
-      return `<ol>${items}</ol>`;
-    })
-    .replace(/((?:^- .+\n?)+)/gm, bloque => {
-      const items = bloque.trim().split("\n").map(l => `<li>${l.replace(/^- /, "")}</li>`).join("");
-      return `<ul>${items}</ul>`;
-    })
-    .replace(/\n{2,}/g, "</p><p>")
-    .replace(/\n/g, "<br>");
-}
-
 function escaparHTML(str) {
   return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -66,6 +38,103 @@ const DISCIPLINA_LABELS = {
 const NIVEL_LABELS = {
   principiante: "🌱 Principiante", medio: "🌿 Medio", avanzado: "🌳 Avanzado", mixto: "🎯 Mixto"
 };
+
+const BLOQUE_ICONOS = {
+  "llegada":      "🌿",
+  "centrado":     "🌿",
+  "calentamiento":"🔥",
+  "principal":    "⚡",
+  "calma":        "🌊",
+  "respiracion":  "🌬️",
+  "pranayama":    "🌬️",
+  "savasana":     "✨",
+  "relajacion":   "✨",
+  "cierre":       "✨",
+};
+
+function iconoBloque(nombre) {
+  const n = nombre.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  for (const [clave, icono] of Object.entries(BLOQUE_ICONOS)) {
+    if (n.includes(clave)) return icono;
+  }
+  return "🧘";
+}
+
+function esBloqueRespiracion(nombre) {
+  const n = nombre.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  return n.includes("respira") || n.includes("pranayama") || n.includes("prana");
+}
+
+// ===== Renderizar sesión estructurada con SVG =====
+function renderizarSesion(sesion) {
+  const contenedor = document.getElementById("sesion-texto");
+  if (!sesion || !sesion.bloques) {
+    contenedor.innerHTML = `<p style="color:var(--rojo)">Error: la sesión no tiene el formato esperado.</p>`;
+    return;
+  }
+
+  let html = "";
+
+  sesion.bloques.forEach(bloque => {
+    const esResp = esBloqueRespiracion(bloque.nombre);
+    const icono  = iconoBloque(bloque.nombre);
+
+    html += `<div class="sesion-bloque${esResp ? " bloque-respiracion" : ""}">`;
+    html += `<div class="sesion-bloque-header">
+      <span style="font-size:1.3rem">${icono}</span>
+      <span class="sesion-bloque-titulo">${escaparHTML(bloque.nombre)}</span>
+      <span class="sesion-bloque-tiempo">⏱ ${bloque.duracion_min} min</span>
+    </div>`;
+
+    if (bloque.descripcion) {
+      html += `<div class="sesion-bloque-desc">${escaparHTML(bloque.descripcion)}</div>`;
+    }
+
+    if (bloque.items && bloque.items.length > 0) {
+      html += `<div class="posturas-grid">`;
+      bloque.items.forEach(item => {
+        const postura = buscarPostura(item.postura);
+        const esPranayama = esResp || item.postura.toLowerCase().includes("pranayama")
+          || item.postura.toLowerCase().includes("nadi") || item.postura.toLowerCase().includes("kapalabhati")
+          || item.postura.toLowerCase().includes("ujjayi") || item.postura.toLowerCase().includes("bhramari")
+          || item.postura.toLowerCase().includes("viloma");
+
+        html += `<div class="postura-card${esPranayama ? " pranayama-card" : ""}">`;
+        html += `<div class="postura-svg">${postura.svg}</div>`;
+        html += `<div class="postura-nombre">${escaparHTML(item.postura)}</div>`;
+        if (item.sanskrit) {
+          html += `<div class="postura-sanskrit">${escaparHTML(item.sanskrit)}</div>`;
+        }
+        if (item.duracion) {
+          html += `<div class="postura-duracion">⏱ ${escaparHTML(item.duracion)}</div>`;
+        }
+        if (item.cue) {
+          html += `<div class="postura-cue">${escaparHTML(item.cue)}</div>`;
+        }
+        if (item.variacion) {
+          html += `<div class="postura-variacion">↪ ${escaparHTML(item.variacion)}</div>`;
+        }
+        html += `</div>`;
+      });
+      html += `</div>`;
+    }
+
+    html += `</div>`;
+  });
+
+  if (sesion.notas_profesor && sesion.notas_profesor.length > 0) {
+    html += `<div class="notas-profesor">
+      <div class="notas-profesor-titulo">📋 Notas del profesor</div>
+      <ul>${sesion.notas_profesor.map(n => `<li>${escaparHTML(n)}</li>`).join("")}</ul>
+    </div>`;
+  }
+
+  contenedor.innerHTML = html;
+}
+
+// ===== Estado =====
+let ultimaDatos   = null;
+let ultimaSesion  = null;
 
 // ===== Generar =====
 document.getElementById("btn-generar").addEventListener("click", async () => {
@@ -83,7 +152,6 @@ document.getElementById("btn-generar").addEventListener("click", async () => {
   document.getElementById("estado-error").classList.add("oculto");
   document.getElementById("estado-carga").classList.remove("oculto");
   document.getElementById("btn-generar").disabled = true;
-
   document.getElementById("estado-carga").scrollIntoView({ behavior: "smooth", block: "nearest" });
 
   try {
@@ -101,8 +169,8 @@ document.getElementById("btn-generar").addEventListener("click", async () => {
       return;
     }
 
-    ultimaDatos    = datos;
-    ultimoContenido = data.contenido;
+    ultimaDatos  = datos;
+    ultimaSesion = data.sesion;
 
     const tituloInput = document.getElementById("titulo-clase").value.trim();
     const tituloAuto  = `${DISCIPLINA_LABELS[datos.disciplina] || datos.disciplina} · ${NIVEL_LABELS[datos.nivel] || datos.nivel} · ${datos.duracion}min`;
@@ -110,16 +178,17 @@ document.getElementById("btn-generar").addEventListener("click", async () => {
 
     document.getElementById("res-titulo").textContent = titulo;
 
+    const duracionTotal = data.sesion.bloques.reduce((s, b) => s + (b.duracion_min || 0), 0);
     const badges = document.getElementById("res-badges");
     badges.innerHTML = `
       <span class="badge badge-${datos.disciplina}">${DISCIPLINA_LABELS[datos.disciplina] || datos.disciplina}</span>
       <span class="badge badge-nivel">${NIVEL_LABELS[datos.nivel] || datos.nivel}</span>
-      <span class="badge">⏱ ${datos.duracion} min</span>
+      <span class="badge">⏱ ${duracionTotal} min</span>
       ${datos.foco ? `<span class="badge">${datos.foco}</span>` : ""}
       ${datos.especial.length ? `<span class="badge" style="background:#fff3e0;color:var(--naranja)">${datos.especial.join(", ")}</span>` : ""}
     `;
 
-    document.getElementById("sesion-texto").innerHTML = renderizarMarkdown(data.contenido);
+    renderizarSesion(data.sesion);
     document.getElementById("resultado").classList.remove("oculto");
     document.getElementById("resultado").scrollIntoView({ behavior: "smooth", block: "start" });
 
@@ -133,8 +202,8 @@ document.getElementById("btn-generar").addEventListener("click", async () => {
 });
 
 // ===== Guardar =====
-document.getElementById("btn-guardar").addEventListener("click", async () => {
-  if (!ultimoContenido) return;
+document.getElementById("btn-guardar").addEventListener("click", async function() {
+  if (!ultimaSesion) return;
 
   const tituloInput = document.getElementById("titulo-clase").value.trim();
   const titulo = tituloInput || document.getElementById("res-titulo").textContent;
@@ -142,13 +211,11 @@ document.getElementById("btn-guardar").addEventListener("click", async () => {
   const payload = {
     ...ultimaDatos,
     titulo,
-    contenido: ultimoContenido,
-    especial:  ultimaDatos.especial,
+    contenido: ultimaSesion,
   };
 
-  const btn = document.getElementById("btn-guardar");
-  btn.disabled = true;
-  btn.textContent = "Guardando…";
+  this.disabled = true;
+  this.textContent = "Guardando…";
 
   try {
     const resp = await fetch("/api/clases", {
@@ -157,18 +224,17 @@ document.getElementById("btn-guardar").addEventListener("click", async () => {
       body: JSON.stringify(payload),
     });
     if (resp.ok) {
-      const clase = await resp.json();
-      btn.textContent = "✓ Guardada";
+      this.textContent = "✓ Guardada";
       setTimeout(() => {
-        btn.textContent = "💾 Guardar";
-        btn.disabled = false;
+        this.textContent = "💾 Guardar";
+        this.disabled = false;
       }, 2000);
     } else {
-      btn.textContent = "Error al guardar";
-      btn.disabled = false;
+      this.textContent = "Error al guardar";
+      this.disabled = false;
     }
   } catch {
-    btn.textContent = "Error al guardar";
-    btn.disabled = false;
+    this.textContent = "Error al guardar";
+    this.disabled = false;
   }
 });
